@@ -30,7 +30,7 @@ python scripts/download_weights.py           # all cameras
 python scripts/download_weights.py --camera og   # one camera only
 ```
 
-Weights are hosted at [`litommy88/wormml`](https://huggingface.co/litommy88/wormml) and saved to `weights/`.
+Weights are hosted at [`tommyli1/wormml`](https://huggingface.co/tommyli1/wormml) and saved to `weights/`.
 
 | File | Camera |
 |------|--------|

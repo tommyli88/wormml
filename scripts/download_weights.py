@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 # ── Hugging Face repo ──────────────────────────────────────────────────────────
-HF_REPO_ID = "litommy88/wormml"   # update if repo is moved
+HF_REPO_ID = "tommyli1/wormml"
 
 WEIGHTS = {
     "og":  "og_best.pt",
