@@ -47,7 +47,7 @@ Weights are hosted at [`litommy88/wormml`](https://huggingface.co/litommy88/worm
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/wormml.git
+git clone https://github.com/tommyli88/wormml.git
 cd wormml
 
 # 2. Create and activate a virtual environment
@@ -464,7 +464,7 @@ python scripts/evaluate.py \
 @misc{wormml2024,
   title  = {WormML: A Cross-Camera Pipeline for C. elegans Worm Counting},
   year   = {2024},
-  note   = {\url{https://github.com/YOUR_USERNAME/wormml}}
+  note   = {\url{https://github.com/tommyli88/wormml}}
 }
 ```
 
