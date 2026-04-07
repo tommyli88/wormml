@@ -1,0 +1,94 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# WormML — Tau Camera Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# Camera:   Tau imaging system
+# Notes:    Tau images have variable interior brightness and rim reflections
+#           that cause the standard OG Hough detector to select glare artefacts
+#           instead of the dish rim.  Key preprocessing differences:
+#             - Histogram equalisation before Hough (normalises dark-interior plates)
+#             - Circle selected by closest-to-centre rather than largest radius
+#             - Radius inflated 4% after detection (Hough underestimates on Tau)
+#             - Wider crop padding (0.08 vs 0.04) and tighter radius bounds
+#           Training uses the original (non-OG-fixed) hyperparameter set.
+#           Thresholds include a low-count confidence boost (0.1).
+# ─────────────────────────────────────────────────────────────────────────────
+
+camera: tau
+
+# ── I/O paths ─────────────────────────────────────────────────────────────────
+# For Tau, the raw merged dataset needs splitting first:
+#   python scripts/split_dataset.py --input /data/tau/merged --output /data/tau/split
+dataset_base: /data/tau/preprocessed
+output_dir:   /runs/tau
+
+# ── Preprocessing ─────────────────────────────────────────────────────────────
+preprocess:
+  target_size:       1344
+  max_workers:       20
+  gaussian_ksize:    [3, 3]
+
+  MAX_DETECT_DIM:    1200
+  HOUGH_DP:          1.2
+  HOUGH_PARAM1:      120
+  HOUGH_PARAM2:      35
+  MIN_R_FRAC:        0.35      # tighter lower bound vs OG 0.30
+  MAX_R_FRAC:        0.55      # tighter upper bound vs OG 0.60
+  PAD_FRAC:          0.08      # wider padding vs OG 0.04
+  RIM_CUT_FRAC:      0.01      # keep more rim vs OG 0.03
+  BG_VALUE:          0
+  circle_selection:  closest_to_center   # avoids glare artefacts
+  use_histeq:        true                # normalise interior brightness
+  radius_inflate:    0.04                # compensate for Hough underestimation
+  median_blur_ksize: 7                   # larger blur for Tau
+
+  apply_inversion:       false
+  apply_extra_aug_train: false
+
+  # Dataset splitting (run split_dataset.py before preprocess.py)
+  train_ratio:  0.8
+  random_seed:  42
+
+# ── Training ──────────────────────────────────────────────────────────────────
+training:
+  epochs:          100
+  patience:        25
+  img_size:        1344
+  batch_size:      6
+  workers:         8
+
+  warmup_epochs:   10
+  mosaic:          1.0
+  mixup:           0.3
+  copy_paste:      0.3
+  degrees:         15.0
+  translate:       0.1
+  scale:           0.5
+  shear:           2.0
+  perspective:     0.0003
+  flipud:          0.5
+  fliplr:          0.5
+
+  optimizer:       AdamW
+  lr0:             0.0008    # 0.001 × 0.8 (historical scaling)
+  lrf:             0.01
+  momentum:        0.937
+  weight_decay:    0.0005
+
+  cls_loss:        0.5
+  box_loss:        7.5
+  dfl_loss:        1.5
+
+  rect:            true
+  single_cls:      true
+  amp:             true
+  seed:            42
+  model_types:     [11l]
+
+# ── Threshold configuration ────────────────────────────────────────────────────
+thresholds:
+  conf_thr:               0.36
+  iou_thr:                0.25      # lower than OG
+  low_count_threshold:    10
+  conf_boost:             0.10      # boost for sparse predictions
+  high_count_threshold:   80
+  high_conf_boost:        0.00

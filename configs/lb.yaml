@@ -1,0 +1,117 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# WormML — LoopBio (LB) Camera Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# Camera:   LoopBio automated imaging platform
+# Notes:    LB images have INVERTED polarity compared to OG/Tau — worms appear
+#           dark on a bright background.  Domain adaptation is achieved by:
+#             1. Inverting pixel values during preprocessing
+#             2. Applying brightness / blur / noise augmentation post-inversion
+#           The preprocessing script accepts TWO input dataset roots (lbog, lb200)
+#           and merges + splits them.  Circle detection uses a centrality-weighted
+#           scoring function and multi-pass Hough fallback.
+#           Training uses Tau-style hyperparameters; large confidence boosts
+#           are needed for both sparse and dense prediction regimes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+camera: lb
+
+# ── I/O paths ─────────────────────────────────────────────────────────────────
+# LB preprocessing merges two source datasets — provide both roots:
+#   input_root1: /data/lb/lbog
+#   input_root2: /data/lb/lb200
+# They are combined, split, and written to dataset_base below.
+dataset_base: /data/lb/preprocessed
+output_dir:   /runs/lb
+
+# ── Preprocessing ─────────────────────────────────────────────────────────────
+preprocess:
+  target_size:       1344
+  max_workers:       20
+  gaussian_ksize:    [3, 3]
+
+  MAX_DETECT_DIM:    1200
+  HOUGH_DP:          1.2
+  HOUGH_PARAM1:      140     # looser vs OG 120 — LB plates have different contrast
+  HOUGH_PARAM2:      40
+  MIN_R_FRAC:        0.25    # wider range to handle varying plate sizes
+  MAX_R_FRAC:        0.80
+  PAD_FRAC:          0.04
+  RIM_CUT_FRAC:      0.03
+  BG_VALUE:          0
+  circle_selection:  centrality   # weighted: radius - alpha * distance_from_centre
+  centrality_alpha:  0.6
+  use_histeq:        false
+  radius_inflate:    0.0
+  median_blur_ksize: 5
+
+  # Inversion for polarity domain adaptation
+  apply_inversion:         true
+
+  # Extra augmentation on train split (post-inversion)
+  apply_extra_aug_train:   true
+  apply_extra_aug_val:     false
+
+  # Brightness augmentation parameters
+  brightness_adjust_range: [0.85, 1.15]
+  brightness_shift_range:  [-10, 10]
+
+  # Blur augmentation
+  blur_ksize_options: [3, 5, 7]
+  blur_sigma_range:   [0.5, 2.0]
+  blur_prob:          0.5
+
+  # Noise augmentation
+  noise_prob:         0.3
+  noise_sigma_range:  [3, 8]
+
+  # Multi-pass Hough fallback
+  hough_fallback_passes: [[120, 32], [100, 25]]
+
+  train_ratio:  0.8
+  random_seed:  42
+
+# ── Training ──────────────────────────────────────────────────────────────────
+training:
+  epochs:          100
+  patience:        25
+  img_size:        1344
+  batch_size:      6
+  workers:         8
+
+  warmup_epochs:   10
+  mosaic:          1.0
+  mixup:           0.3
+  copy_paste:      0.3
+  degrees:         15.0
+  translate:       0.1
+  scale:           0.5
+  shear:           2.0
+  perspective:     0.0003
+  flipud:          0.5
+  fliplr:          0.5
+
+  optimizer:       AdamW
+  lr0:             0.0008
+  lrf:             0.01
+  momentum:        0.937
+  weight_decay:    0.0005
+
+  cls_loss:        0.5
+  box_loss:        7.5
+  dfl_loss:        1.5
+
+  rect:            true
+  single_cls:      true
+  amp:             true
+  seed:            42
+  model_types:     [11l]
+
+# ── Threshold configuration ────────────────────────────────────────────────────
+# LB requires the largest confidence boosts of any camera.
+thresholds:
+  conf_thr:               0.265
+  iou_thr:                0.30
+  low_count_threshold:    10
+  conf_boost:             0.175   # large boost for sparse low-density images
+  high_count_threshold:   80
+  high_conf_boost:        0.180   # also boost for high-density crowded images

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Packages
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# Training outputs (too large for git)
+runs/
+
+# Model weights (too large for git)
+weights/*.pt
+
+# Datasets
+data/
+
+# Visualization outputs
+*.png
+!docs/*.png
+
+# IDE and OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Jupyter
+*.ipynb_checkpoints/
+
+# Extracted content
+extracted_content/

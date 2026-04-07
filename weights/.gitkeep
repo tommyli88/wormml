@@ -1,0 +1,6 @@
+# Place pretrained weights here.
+# Download from the project release page:
+#   og_best.pt   — OG camera model
+#   tau_best.pt  — Tau camera model
+#   lb_best.pt   — LoopBio camera model
+#   uva_best.pt  — UVA camera model

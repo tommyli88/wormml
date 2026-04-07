@@ -1,0 +1,89 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# WormML — OG (Original) Camera Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# Camera:   Original lab microscope setup
+# Notes:    Baseline camera with the most refined hyperparameters.
+#           Preprocessing uses standard Hough detection, selects the largest
+#           detected circle, and applies a modest crop padding.
+#           Training uses the fixed hyperparameters from the OG thesis run:
+#             - warmup_epochs reduced from 10 → 3
+#             - copy_paste reduced from 0.3 → 0.1 (safer for dense worms)
+#             - box_loss increased from 7.5 → 9.0 (better localisation)
+#             - lr0 uses full 0.001 (removed historical 0.8× scaling)
+#             - rect=False (letterbox padding, better for dense small objects)
+# ─────────────────────────────────────────────────────────────────────────────
+
+camera: og
+
+# ── I/O paths (update before running) ─────────────────────────────────────────
+dataset_base: /data/og/preprocessed
+output_dir:   /runs/og
+
+# ── Preprocessing ─────────────────────────────────────────────────────────────
+preprocess:
+  target_size:       1344
+  max_workers:       20
+  gaussian_ksize:    [3, 3]
+
+  # Hough circle detection
+  MAX_DETECT_DIM:    1200
+  HOUGH_DP:          1.2
+  HOUGH_PARAM1:      120
+  HOUGH_PARAM2:      35
+  MIN_R_FRAC:        0.30
+  MAX_R_FRAC:        0.60
+  PAD_FRAC:          0.04
+  RIM_CUT_FRAC:      0.03
+  BG_VALUE:          0
+  circle_selection:  largest_radius
+  use_histeq:        false
+  radius_inflate:    0.0
+  median_blur_ksize: 5
+
+  apply_inversion:         false
+  apply_extra_aug_train:   false
+
+# ── Training ──────────────────────────────────────────────────────────────────
+training:
+  epochs:          100
+  patience:        25
+  img_size:        1344
+  batch_size:      6
+  workers:         8
+
+  warmup_epochs:   3        # ← reduced from 10
+  mosaic:          1.0
+  mixup:           0.3
+  copy_paste:      0.1      # ← reduced from 0.3
+  degrees:         15.0
+  translate:       0.1
+  scale:           0.5
+  shear:           2.0
+  perspective:     0.0003
+  flipud:          0.5
+  fliplr:          0.5
+
+  optimizer:       AdamW
+  lr0:             0.001    # full value, no 0.8× scaling
+  lrf:             0.01
+  momentum:        0.937
+  weight_decay:    0.0005
+
+  cls_loss:        0.5
+  box_loss:        9.0      # ← increased from 7.5
+  dfl_loss:        1.5
+
+  rect:            false    # ← disabled: letterbox better for dense objects
+  single_cls:      false
+  amp:             true
+  seed:            42
+  model_types:     [11l]
+
+# ── Threshold configuration ────────────────────────────────────────────────────
+thresholds:
+  conf_thr:               0.35
+  iou_thr:                0.30
+  low_count_threshold:    10
+  conf_boost:             0.00
+  high_count_threshold:   80
+  high_conf_boost:        0.00

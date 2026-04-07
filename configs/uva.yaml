@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# WormML — UVA External Dataset Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# Camera:   External UVA (University of Virginia) dataset
+# Notes:    UVA data was used for native YOLO training — no custom preprocessing
+#           (no crop, inversion, or extra augmentation).  Images are used as-is
+#           after a standard 80/20 train/val split.
+#           The preprocessing step simply copies files into the expected
+#           directory structure.  Training uses standard defaults identical to
+#           the Tau/LB profile (patience reduced to 15).
+# ─────────────────────────────────────────────────────────────────────────────
+
+camera: uva
+
+# ── I/O paths ─────────────────────────────────────────────────────────────────
+dataset_base: /data/uva/split
+output_dir:   /runs/uva
+
+# ── Preprocessing ─────────────────────────────────────────────────────────────
+# skip_preprocessing: true means images are copied as-is, no crop/mask/resize.
+preprocess:
+  skip_preprocessing: true
+  train_ratio:        0.8
+  random_seed:        42
+
+# ── Training ──────────────────────────────────────────────────────────────────
+training:
+  epochs:          100
+  patience:        15        # reduced from 25
+  img_size:        1344
+  batch_size:      6
+  workers:         10
+
+  warmup_epochs:   10
+  mosaic:          1.0
+  mixup:           0.3
+  copy_paste:      0.3
+  degrees:         15.0
+  translate:       0.1
+  scale:           0.5
+  shear:           2.0
+  perspective:     0.0003
+  flipud:          0.5
+  fliplr:          0.5
+
+  optimizer:       AdamW
+  lr0:             0.0008
+  lrf:             0.01
+  momentum:        0.937
+  weight_decay:    0.0005
+
+  cls_loss:        0.5
+  box_loss:        7.5
+  dfl_loss:        1.5
+
+  rect:            true
+  single_cls:      true
+  amp:             true
+  seed:            42
+  model_types:     [11l]
+
+# ── Threshold configuration ────────────────────────────────────────────────────
+thresholds:
+  conf_thr:               0.32
+  iou_thr:                0.30
+  low_count_threshold:    10
+  conf_boost:             0.10
+  high_count_threshold:   80
+  high_conf_boost:        0.00
